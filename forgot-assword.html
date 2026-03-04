@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Forgot Password — Whispr</title>
+  <link rel="stylesheet" href="css/style.css"/>
+</head>
+<body>
+<div class="page-center">
+  <div class="card">
+    <a href="index.html" class="brand" style="display:inline-block;margin-bottom:28px;">Whispr<span class="brand-dot">.</span></a>
+    <h2 style="font-size:1.5rem;margin-bottom:6px;">Forgot your password?</h2>
+    <p style="color:var(--muted);font-size:0.85rem;margin-bottom:28px;">Enter your email and we'll send you a reset link.</p>
+
+    <div class="alert alert-error" id="errMsg"></div>
+    <div class="alert alert-success" id="okMsg"></div>
+
+    <div class="form-group">
+      <label for="email">Email</label>
+      <input type="email" id="email" placeholder="you@example.com"/>
+    </div>
+
+    <button class="btn btn-primary" id="resetBtn" onclick="doReset()">Send Reset Link</button>
+
+    <div class="divider">or</div>
+    <p style="text-align:center;font-size:0.85rem;color:var(--muted);">
+      Remember it? <a href="login.html">Log in</a>
+    </p>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="js/supabase.js"></script>
+<script>
+  async function doReset() {
+    const btn = document.getElementById('resetBtn');
+    const errEl = document.getElementById('errMsg');
+    const okEl = document.getElementById('okMsg');
+    const email = document.getElementById('email').value.trim();
+
+    errEl.classList.remove('show');
+    okEl.classList.remove('show');
+
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      errEl.textContent = 'Please enter a valid email address.';
+      errEl.classList.add('show');
+      return;
+    }
+
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span> Sending...';
+
+    const { error } = await db.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/reset-password.html`
+    });
+
+    if (error) {
+      errEl.textContent = error.message;
+      errEl.classList.add('show');
+      btn.disabled = false;
+      btn.textContent = 'Send Reset Link';
+    } else {
+      okEl.textContent = '✓ Reset link sent! Check your email.';
+      okEl.classList.add('show');
+      btn.textContent = 'Link Sent!';
+    }
+  }
+
+  document.addEventListener('keydown', e => { if (e.key === 'Enter') doReset(); });
+</script>
+</body>
+</html>
