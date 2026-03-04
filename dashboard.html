@@ -11,15 +11,8 @@
       border-top: 1px solid var(--border);
       padding-top: 32px;
     }
-    .settings-section h2 {
-      font-size: 1.2rem;
-      margin-bottom: 6px;
-    }
-    .settings-section p {
-      color: var(--muted);
-      font-size: 0.82rem;
-      margin-bottom: 20px;
-    }
+    .settings-section h2 { font-size: 1.2rem; margin-bottom: 6px; }
+    .settings-section p { color: var(--muted); font-size: 0.82rem; margin-bottom: 20px; }
     .settings-card {
       background: var(--bg2);
       border: 1px solid var(--border);
@@ -47,7 +40,6 @@
     <p>Only you can see these. Share your link to receive more.</p>
   </div>
 
-  <!-- Share your link -->
   <div class="share-box" id="shareBox" style="display:none;">
     <div>
       <div style="font-size:0.7rem;text-transform:uppercase;letter-spacing:0.1em;color:var(--muted);margin-bottom:4px;">Your public link</div>
@@ -56,7 +48,6 @@
     <button class="btn btn-secondary btn-sm" onclick="copyLink()">📋 Copy</button>
   </div>
 
-  <!-- Stats -->
   <div class="stats-row">
     <div class="stat-chip">
       <strong id="msgCount">—</strong>
@@ -64,7 +55,6 @@
     </div>
   </div>
 
-  <!-- Messages -->
   <div class="messages-grid" id="messagesGrid">
     <div class="empty">
       <div class="icon">✉️</div>
@@ -72,14 +62,12 @@
     </div>
   </div>
 
-  <!-- Change Password Section -->
   <div class="settings-section">
     <h2>Change Password</h2>
     <p>Update your account password anytime.</p>
     <div class="settings-card">
       <div class="alert alert-error" id="cpErrMsg"></div>
       <div class="alert alert-success" id="cpOkMsg"></div>
-
       <div class="form-group">
         <label for="newPassword">New Password</label>
         <input type="password" id="newPassword" placeholder="Min. 6 characters"/>
@@ -99,13 +87,11 @@
 <script src="js/auth.js"></script>
 <script src="js/messages.js"></script>
 <script>
-  let profile = null;
-
   (async () => {
     const session = await requireAuth();
     if (!session) return;
 
-    profile = await getCurrentProfile(session.user.id);
+    const profile = await getCurrentProfile(session.user.id);
     if (!profile) {
       document.getElementById('greet').textContent = 'Profile not found.';
       return;
@@ -113,13 +99,12 @@
 
     document.getElementById('userLabel').textContent = '@' + profile.username;
     document.getElementById('greet').textContent = 'Hey, @' + profile.username + ' 👋';
-
-  document.getElementById('shareUrl').textContent = ${window.location.origin}/user?username=${profile.username};
-  document.getElementById('shareBox').style.display = 'flex';
+    document.getElementById('shareUrl').textContent = window.location.origin + '/user?username=' + profile.username;
+    document.getElementById('shareBox').style.display = 'flex';
 
     await loadMessages(session.user.id);
   })();
- 
+
   async function loadMessages(userId) {
     const grid = document.getElementById('messagesGrid');
     try {
@@ -127,24 +112,15 @@
       document.getElementById('msgCount').textContent = msgs.length;
 
       if (msgs.length === 0) {
-        grid.innerHTML = `
-          <div class="empty">
-            <div class="icon">💌</div>
-            <p>No messages yet. Share your link to get started!</p>
-          </div>`;
+        grid.innerHTML = '<div class="empty"><div class="icon">💌</div><p>No messages yet. Share your link to get started!</p></div>';
         return;
       }
 
-      grid.innerHTML = msgs.map((m, i) => `
-        <div class="message-card" style="animation-delay:${i * 0.06}s">
-          <p class="message-text">${escapeHtml(m.message)}</p>
-          <div class="message-meta">
-            <span class="anon-badge">anonymous</span>
-            <span class="message-time">${timeAgo(m.created_at)}</span>
-          </div>
-        </div>`).join('');
+      grid.innerHTML = msgs.map(function(m, i) {
+        return '<div class="message-card" style="animation-delay:' + (i * 0.06) + 's"><p class="message-text">' + escapeHtml(m.message) + '</p><div class="message-meta"><span class="anon-badge">anonymous</span><span class="message-time">' + timeAgo(m.created_at) + '</span></div></div>';
+      }).join('');
     } catch (err) {
-      grid.innerHTML = `<div class="alert alert-error show">${err.message}</div>`;
+      grid.innerHTML = '<div class="alert alert-error show">' + err.message + '</div>';
     }
   }
 
@@ -183,15 +159,15 @@
   }
 
   function escapeHtml(str) {
-    return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   }
 
   function copyLink() {
     const url = document.getElementById('shareUrl').textContent;
-    navigator.clipboard.writeText(url).then(() => {
+    navigator.clipboard.writeText(url).then(function() {
       const btn = event.target;
       btn.textContent = '✓ Copied!';
-      setTimeout(() => btn.textContent = '📋 Copy', 2000);
+      setTimeout(function() { btn.textContent = '📋 Copy'; }, 2000);
     });
   }
 </script>
