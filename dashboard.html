@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Dashboard — Whispr</title>
+  <link rel="stylesheet" href="css/style.css"/>
+</head>
+<body>
+
+<nav>
+  <div class="nav-inner">
+    <a href="index.html" class="brand">Whispr<span class="brand-dot">.</span></a>
+    <div class="nav-actions">
+      <span id="userLabel" style="font-size:0.8rem;color:var(--muted);"></span>
+      <button class="btn btn-ghost btn-sm" onclick="handleLogout()">Log out</button>
+    </div>
+  </div>
+</nav>
+
+<div class="container">
+  <div class="page-header">
+    <h1 id="greet">Your Messages</h1>
+    <p>Only you can see these. Share your link to receive more.</p>
+  </div>
+
+  <!-- Share your link -->
+  <div class="share-box" id="shareBox" style="display:none;">
+    <div>
+      <div style="font-size:0.7rem;text-transform:uppercase;letter-spacing:0.1em;color:var(--muted);margin-bottom:4px;">Your public link</div>
+      <div class="share-url" id="shareUrl"></div>
+    </div>
+    <button class="btn btn-secondary btn-sm" onclick="copyLink()">📋 Copy</button>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats-row">
+    <div class="stat-chip">
+      <strong id="msgCount">—</strong>
+      Messages received
+    </div>
+  </div>
+
+  <!-- Messages -->
+  <div class="messages-grid" id="messagesGrid">
+    <div class="empty">
+      <div class="icon">✉️</div>
+      <p>Loading your messages...</p>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="js/supabase.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/messages.js"></script>
+<script>
+  let profile = null;
+
+  (async () => {
+    const session = await requireAuth();
+    if (!session) return;
+
+    profile = await getCurrentProfile(session.user.id);
+    if (!profile) {
+      document.getElementById('greet').textContent = 'Profile not found.';
+      return;
+    }
+
+    document.getElementById('userLabel').textContent = '@' + profile.username;
+    document.getElementById('greet').textContent = 'Hey, @' + profile.username + ' 👋';
+
+    const link = `${location.origin}${location.pathname.replace('dashboard.html','user.html')}?username=${profile.username}`;
+    document.getElementById('shareUrl').textContent = link;
+    document.getElementById('shareBox').style.display = 'flex';
+
+    await loadMessages(session.user.id);
+  })();
+
+  async function loadMessages(userId) {
+    const grid = document.getElementById('messagesGrid');
+    try {
+      const msgs = await getMyMessages(userId);
+      document.getElementById('msgCount').textContent = msgs.length;
+
+      if (msgs.length === 0) {
+        grid.innerHTML = `
+          <div class="empty">
+            <div class="icon">💌</div>
+            <p>No messages yet. Share your link to get started!</p>
+          </div>`;
+        return;
+      }
+
+      grid.innerHTML = msgs.map((m, i) => `
+        <div class="message-card" style="animation-delay:${i * 0.06}s">
+          <p class="message-text">${escapeHtml(m.message)}</p>
+          <div class="message-meta">
+            <span class="anon-badge">anonymous</span>
+            <span class="message-time">${timeAgo(m.created_at)}</span>
+          </div>
+        </div>`).join('');
+    } catch (err) {
+      grid.innerHTML = `<div class="alert alert-error show">${err.message}</div>`;
+    }
+  }
+
+  function escapeHtml(str) {
+    return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  function copyLink() {
+    const url = document.getElementById('shareUrl').textContent;
+    navigator.clipboard.writeText(url).then(() => {
+      const btn = event.target;
+      btn.textContent = '✓ Copied!';
+      setTimeout(() => btn.textContent = '📋 Copy', 2000);
+    });
+  }
+</script>
+</body>
+</html>

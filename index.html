@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Whispr — Anonymous Messages</title>
+  <link rel="stylesheet" href="css/style.css"/>
+</head>
+<body>
+
+<nav>
+  <div class="nav-inner">
+    <span class="brand">Whispr<span class="brand-dot">.</span></span>
+    <div class="nav-actions">
+      <a href="login.html"><button class="btn btn-ghost btn-sm">Log in</button></a>
+      <a href="signup.html"><button class="btn btn-primary btn-sm">Sign up</button></a>
+    </div>
+  </div>
+</nav>
+
+<section class="hero">
+  <div class="hero-glow"></div>
+  <div class="hero-badge">✦ Completely Anonymous</div>
+  <h1>Receive <span>honest</span> messages from anyone.</h1>
+  <p>Share your personal link. Let people send you anonymous messages. No accounts needed to send.</p>
+  <div class="hero-btns">
+    <a href="signup.html"><button class="btn btn-primary">Get your link →</button></a>
+    <a href="login.html"><button class="btn btn-secondary">Log in</button></a>
+  </div>
+</section>
+
+<div class="container">
+  <div class="features">
+    <div class="feature-card">
+      <div class="icon">🔒</div>
+      <h3>Truly Anonymous</h3>
+      <p>Senders stay hidden from you. Only admins can verify identities if needed.</p>
+    </div>
+    <div class="feature-card">
+      <div class="icon">⚡</div>
+      <h3>Instant Delivery</h3>
+      <p>Messages appear in your dashboard the moment someone sends them.</p>
+    </div>
+    <div class="feature-card">
+      <div class="icon">🔗</div>
+      <h3>Your Personal Link</h3>
+      <p>One unique URL you can share anywhere — bio, socials, wherever.</p>
+    </div>
+    <div class="feature-card">
+      <div class="icon">🛡️</div>
+      <h3>Spam Protection</h3>
+      <p>Gmail verification required to send, keeping junk messages away.</p>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="js/supabase.js"></script>
+<script>
+  (async () => {
+    const { data: { session } } = await db.auth.getSession();
+    if (session) {
+      const actions = document.querySelector('.nav-actions');
+      actions.innerHTML = `<a href="dashboard.html"><button class="btn btn-primary btn-sm">Dashboard →</button></a>`;
+    }
+  })();
+</script>
+</body>
+</html>

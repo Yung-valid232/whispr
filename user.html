@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Send a message — Whispr</title>
+  <link rel="stylesheet" href="css/style.css"/>
+</head>
+<body>
+
+<nav>
+  <div class="nav-inner">
+    <a href="index.html" class="brand">Whispr<span class="brand-dot">.</span></a>
+    <div class="nav-actions">
+      <a href="signup.html"><button class="btn btn-primary btn-sm">Get your link</button></a>
+    </div>
+  </div>
+</nav>
+
+<div class="container" style="max-width:560px;">
+
+  <div class="user-hero" id="userHero" style="display:none;">
+    <div class="avatar" id="avatar"></div>
+    <h1 id="heroName"></h1>
+    <p>Send an anonymous message. They won't know who you are.</p>
+  </div>
+
+  <div id="notFound" style="display:none;" class="empty" >
+    <div class="icon">🚫</div>
+    <p>User not found. Check the link and try again.</p>
+  </div>
+
+  <div class="card" id="msgForm" style="display:none;max-width:100%;margin-top:0;">
+    <div class="alert alert-error" id="errMsg"></div>
+    <div class="alert alert-success" id="okMsg"></div>
+
+    <div class="form-group">
+      <label for="senderEmail">Your Gmail</label>
+      <input type="email" id="senderEmail" placeholder="yourname@gmail.com"/>
+      <div style="font-size:0.72rem;color:var(--muted);margin-top:5px;">Used for verification only. Never shown to the recipient.</div>
+    </div>
+
+    <div class="form-group">
+      <label for="msgText">Message <span id="recipientLabel"></span></label>
+      <textarea id="msgText" placeholder="Write something honest..." maxlength="500"></textarea>
+      <div class="char-counter" id="charCount">0 / 500</div>
+    </div>
+
+    <button class="btn btn-primary" id="sendBtn" onclick="doSend()">Send Anonymously 🕊️</button>
+  </div>
+
+  <p style="text-align:center;font-size:0.78rem;color:var(--muted);margin:24px 0;position:relative;z-index:1;">
+    Want your own link? <a href="signup.html">Join Whispr free →</a>
+  </p>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="js/supabase.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/messages.js"></script>
+<script>
+  const params = new URLSearchParams(location.search);
+  const username = (params.get('username') || '').trim().toLowerCase();
+
+  if (!username) {
+    window.location.href = 'index.html';
+  }
+
+  (async () => {
+    const { data: profile } = await db.from('profiles').select('id,username').eq('username', username).maybeSingle();
+
+    if (!profile) {
+      document.getElementById('notFound').style.display = 'block';
+      return;
+    }
+
+    const initial = profile.username[0].toUpperCase();
+    document.getElementById('avatar').textContent = initial;
+    document.getElementById('heroName').textContent = '@' + profile.username;
+    document.getElementById('recipientLabel').textContent = `to @${profile.username}`;
+    document.getElementById('userHero').style.display = 'block';
+    document.getElementById('msgForm').style.display = 'block';
+    document.title = `Send a message to @${profile.username} — Whispr`;
+  })();
+
+  // Char counter
+  document.getElementById('msgText').addEventListener('input', function() {
+    const len = this.value.length;
+    const counter = document.getElementById('charCount');
+    counter.textContent = `${len} / 500`;
+    counter.classList.toggle('warn', len > 450);
+  });
+
+  async function doSend() {
+    const btn = document.getElementById('sendBtn');
+    const errEl = document.getElementById('errMsg');
+    const okEl = document.getElementById('okMsg');
+    const senderEmail = document.getElementById('senderEmail').value.trim();
+    const message = document.getElementById('msgText').value.trim();
+
+    errEl.classList.remove('show');
+    okEl.classList.remove('show');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span> Sending...';
+
+    try {
+      await submitMessage(username, senderEmail, message);
+      okEl.textContent = '✓ Message sent! They\'ll never know it was you.';
+      okEl.classList.add('show');
+      document.getElementById('senderEmail').value = '';
+      document.getElementById('msgText').value = '';
+      document.getElementById('charCount').textContent = '0 / 500';
+    } catch (err) {
+      errEl.textContent = err.message;
+      errEl.classList.add('show');
+    }
+
+    btn.disabled = false;
+    btn.textContent = 'Send Anonymously 🕊️';
+  }
+</script>
+</body>
+</html>

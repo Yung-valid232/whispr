@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Admin — Whispr</title>
+  <link rel="stylesheet" href="css/style.css"/>
+</head>
+<body>
+
+<nav>
+  <div class="nav-inner">
+    <a href="index.html" class="brand">Whispr<span class="brand-dot">.</span></a>
+    <div class="nav-actions">
+      <span style="font-size:0.72rem;color:var(--accent2);background:rgba(6,214,160,0.1);border:1px solid rgba(6,214,160,0.3);padding:4px 12px;border-radius:999px;">ADMIN</span>
+      <button class="btn btn-ghost btn-sm" onclick="handleLogout()">Log out</button>
+    </div>
+  </div>
+</nav>
+
+<div id="accessDenied" style="display:none;" class="page-center">
+  <div class="card" style="text-align:center;">
+    <div style="font-size:3rem;margin-bottom:16px;">🚫</div>
+    <h2 style="margin-bottom:8px;">Access Denied</h2>
+    <p style="color:var(--muted);font-size:0.85rem;">This page is for administrators only.</p>
+    <a href="dashboard.html" style="display:block;margin-top:20px;"><button class="btn btn-secondary">Go to Dashboard</button></a>
+  </div>
+</div>
+
+<div id="adminContent" style="display:none;">
+  <div class="container">
+    <div class="page-header">
+      <h1>Admin Dashboard</h1>
+      <p>Full message log with sender emails. Keep this confidential.</p>
+    </div>
+
+    <div class="stats-row">
+      <div class="stat-chip"><strong id="totalMsgs">—</strong>Total Messages</div>
+      <div class="stat-chip"><strong id="totalUsers">—</strong>Total Users</div>
+    </div>
+
+    <!-- Filter -->
+    <div style="margin:20px 0;display:flex;gap:12px;align-items:center;flex-wrap:wrap;position:relative;z-index:1;">
+      <input type="text" id="filterInput" placeholder="Filter by username or email..." style="max-width:340px;" oninput="filterTable()"/>
+      <button class="btn btn-ghost btn-sm" onclick="loadMessages()">↺ Refresh</button>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Recipient</th>
+            <th>Sender Gmail</th>
+            <th>Message</th>
+            <th>Sent</th>
+          </tr>
+        </thead>
+        <tbody id="msgTableBody">
+          <tr><td colspan="5" style="text-align:center;padding:32px;color:var(--muted);">Loading...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="js/supabase.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/messages.js"></script>
+<script>
+  let allMessages = [];
+
+  (async () => {
+    const session = await requireAuth();
+    if (!session) return;
+
+    // Check admin
+    if (session.user.email !== ADMIN_EMAIL) {
+      document.getElementById('accessDenied').style.display = 'flex';
+      return;
+    }
+
+    document.getElementById('adminContent').style.display = 'block';
+    await loadMessages();
+  })();
+
+  async function loadMessages() {
+    const tbody = document.getElementById('msgTableBody');
+    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:32px;color:var(--muted);">Loading...</td></tr>`;
+
+    try {
+      allMessages = await getAllMessages();
+      document.getElementById('totalMsgs').textContent = allMessages.length;
+
+      // Count unique users
+      const users = new Set(allMessages.map(m => m.receiver_id));
+      document.getElementById('totalUsers').textContent = users.size;
+
+      renderTable(allMessages);
+    } catch (err) {
+      tbody.innerHTML = `<tr><td colspan="5"><div class="alert alert-error show">${err.message}</div></td></tr>`;
+    }
+  }
+
+  function renderTable(msgs) {
+    const tbody = document.getElementById('msgTableBody');
+    if (msgs.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:32px;color:var(--muted);">No messages found.</td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = msgs.map((m, i) => `
+      <tr>
+        <td style="color:var(--muted);font-size:0.75rem;">${i + 1}</td>
+        <td>@${escapeHtml(m.profiles?.username || '—')}</td>
+        <td class="email-cell">${escapeHtml(m.sender_email)}</td>
+        <td style="max-width:360px;word-break:break-word;">${escapeHtml(m.message)}</td>
+        <td style="white-space:nowrap;color:var(--muted);font-size:0.78rem;">${new Date(m.created_at).toLocaleString()}</td>
+      </tr>`).join('');
+  }
+
+  function filterTable() {
+    const q = document.getElementById('filterInput').value.toLowerCase();
+    if (!q) { renderTable(allMessages); return; }
+    const filtered = allMessages.filter(m =>
+      (m.profiles?.username || '').toLowerCase().includes(q) ||
+      m.sender_email.toLowerCase().includes(q) ||
+      m.message.toLowerCase().includes(q)
+    );
+    renderTable(filtered);
+  }
+
+  function escapeHtml(str) {
+    return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+</script>
+</body>
+</html>
