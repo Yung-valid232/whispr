@@ -114,13 +114,12 @@
     document.getElementById('userLabel').textContent = '@' + profile.username;
     document.getElementById('greet').textContent = 'Hey, @' + profile.username + ' 👋';
 
-    const link = `${location.origin.replace('dashboard.html', '')}/user.html?username=${profile.username}`;
-    document.getElementById('shareUrl').textContent = `${window.location.origin}/user.html?username=${profile.username}`;
-    document.getElementById('shareBox').style.display = 'flex';
+  document.getElementById('shareUrl').textContent = ${window.location.origin}/user?username=${profile.username};
+  document.getElementById('shareBox').style.display = 'flex';
 
     await loadMessages(session.user.id);
   })();
-
+ 
   async function loadMessages(userId) {
     const grid = document.getElementById('messagesGrid');
     try {
