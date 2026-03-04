@@ -5,6 +5,27 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Admin — Whispr</title>
   <link rel="stylesheet" href="css/style.css"/>
+  <style>
+    .device-badge {
+      display: inline-block;
+      font-size: 0.68rem;
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      padding: 2px 8px;
+      border-radius: 999px;
+      white-space: nowrap;
+    }
+    .location-cell {
+      color: var(--accent2);
+      font-size: 0.78rem;
+    }
+    .ip-cell {
+      color: var(--muted);
+      font-size: 0.75rem;
+      font-family: 'DM Mono', monospace;
+    }
+  </style>
 </head>
 <body>
 
@@ -31,7 +52,7 @@
   <div class="container">
     <div class="page-header">
       <h1>Admin Dashboard</h1>
-      <p>Full message log with sender emails. Keep this confidential.</p>
+      <p>Full message log with sender details. Keep this confidential.</p>
     </div>
 
     <div class="stats-row">
@@ -41,7 +62,7 @@
 
     <!-- Filter -->
     <div style="margin:20px 0;display:flex;gap:12px;align-items:center;flex-wrap:wrap;position:relative;z-index:1;">
-      <input type="text" id="filterInput" placeholder="Filter by username or email..." style="max-width:340px;" oninput="filterTable()"/>
+      <input type="text" id="filterInput" placeholder="Filter by username, email, location..." style="max-width:340px;" oninput="filterTable()"/>
       <button class="btn btn-ghost btn-sm" onclick="loadMessages()">↺ Refresh</button>
     </div>
 
@@ -52,12 +73,16 @@
             <th>#</th>
             <th>Recipient</th>
             <th>Sender Gmail</th>
+            <th>Device</th>
+            <th>Browser</th>
+            <th>IP Address</th>
+            <th>Location</th>
             <th>Message</th>
             <th>Sent</th>
           </tr>
         </thead>
         <tbody id="msgTableBody">
-          <tr><td colspan="5" style="text-align:center;padding:32px;color:var(--muted);">Loading...</td></tr>
+          <tr><td colspan="9" style="text-align:center;padding:32px;color:var(--muted);">Loading...</td></tr>
         </tbody>
       </table>
     </div>
@@ -75,7 +100,6 @@
     const session = await requireAuth();
     if (!session) return;
 
-    // Check admin
     if (session.user.email !== ADMIN_EMAIL) {
       document.getElementById('accessDenied').style.display = 'flex';
       return;
@@ -87,26 +111,25 @@
 
   async function loadMessages() {
     const tbody = document.getElementById('msgTableBody');
-    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:32px;color:var(--muted);">Loading...</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:32px;color:var(--muted);">Loading...</td></tr>`;
 
     try {
       allMessages = await getAllMessages();
       document.getElementById('totalMsgs').textContent = allMessages.length;
 
-      // Count unique users
       const users = new Set(allMessages.map(m => m.receiver_id));
       document.getElementById('totalUsers').textContent = users.size;
 
       renderTable(allMessages);
     } catch (err) {
-      tbody.innerHTML = `<tr><td colspan="5"><div class="alert alert-error show">${err.message}</div></td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="9"><div class="alert alert-error show">${err.message}</div></td></tr>`;
     }
   }
 
   function renderTable(msgs) {
     const tbody = document.getElementById('msgTableBody');
     if (msgs.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:32px;color:var(--muted);">No messages found.</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:32px;color:var(--muted);">No messages found.</td></tr>`;
       return;
     }
 
@@ -115,7 +138,11 @@
         <td style="color:var(--muted);font-size:0.75rem;">${i + 1}</td>
         <td>@${escapeHtml(m.profiles?.username || '—')}</td>
         <td class="email-cell">${escapeHtml(m.sender_email)}</td>
-        <td style="max-width:360px;word-break:break-word;">${escapeHtml(m.message)}</td>
+        <td><span class="device-badge">${escapeHtml(m.device_type || '—')}</span></td>
+        <td><span class="device-badge">${escapeHtml(m.browser || '—')}</span></td>
+        <td class="ip-cell">${escapeHtml(m.ip_address || '—')}</td>
+        <td class="location-cell">${escapeHtml(m.location || '—')}</td>
+        <td style="max-width:260px;word-break:break-word;">${escapeHtml(m.message)}</td>
         <td style="white-space:nowrap;color:var(--muted);font-size:0.78rem;">${new Date(m.created_at).toLocaleString()}</td>
       </tr>`).join('');
   }
@@ -126,7 +153,11 @@
     const filtered = allMessages.filter(m =>
       (m.profiles?.username || '').toLowerCase().includes(q) ||
       m.sender_email.toLowerCase().includes(q) ||
-      m.message.toLowerCase().includes(q)
+      (m.message || '').toLowerCase().includes(q) ||
+      (m.location || '').toLowerCase().includes(q) ||
+      (m.ip_address || '').toLowerCase().includes(q) ||
+      (m.device_type || '').toLowerCase().includes(q) ||
+      (m.browser || '').toLowerCase().includes(q)
     );
     renderTable(filtered);
   }
