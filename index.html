@@ -12,8 +12,8 @@
   <div class="nav-inner">
     <span class="brand">Whispr<span class="brand-dot">.</span></span>
     <div class="nav-actions">
-      <a href="login.html"><button class="btn btn-ghost btn-sm">Log in</button></a>
-      <a href="signup.html"><button class="btn btn-primary btn-sm">Sign up</button></a>
+      <a href="login"><button class="btn btn-ghost btn-sm">Log in</button></a>
+      <a href="signup"><button class="btn btn-primary btn-sm">Sign up</button></a>
     </div>
   </div>
 </nav>
@@ -24,8 +24,8 @@
   <h1>Receive <span>honest</span> messages from anyone.</h1>
   <p>Share your personal link. Let people send you anonymous messages. No accounts needed to send.</p>
   <div class="hero-btns">
-    <a href="signup.html"><button class="btn btn-primary">Get your link →</button></a>
-    <a href="login.html"><button class="btn btn-secondary">Log in</button></a>
+    <a href="signup"><button class="btn btn-primary">Get your link →</button></a>
+    <a href="login"><button class="btn btn-secondary">Log in</button></a>
   </div>
 </section>
 
@@ -61,7 +61,7 @@
     const { data: { session } } = await db.auth.getSession();
     if (session) {
       const actions = document.querySelector('.nav-actions');
-      actions.innerHTML = `<a href="dashboard.html"><button class="btn btn-primary btn-sm">Dashboard →</button></a>`;
+      actions.innerHTML = `<a href="dashboard"><button class="btn btn-primary btn-sm">Dashboard →</button></a>`;
     }
   })();
 </script>
