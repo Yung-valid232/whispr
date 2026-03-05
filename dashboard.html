@@ -20,6 +20,154 @@
       padding: 28px;
       max-width: 460px;
     }
+
+    .share-card-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      font-family: 'DM Mono', monospace;
+      font-size: 0.72rem;
+      padding: 5px 12px;
+      border-radius: 999px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .share-card-btn:hover { border-color: var(--accent); color: var(--text); }
+
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.85);
+      z-index: 1000;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      backdrop-filter: blur(8px);
+    }
+    .modal-overlay.show { display: flex; }
+
+    .modal-inner {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+      width: 100%;
+      max-width: 380px;
+    }
+
+    .share-card {
+      width: 100%;
+      aspect-ratio: 9/16;
+      max-height: 65vh;
+      border-radius: 24px;
+      background: linear-gradient(145deg, #0a0a0f 0%, #1a0a2e 50%, #0a0a0f 100%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 32px;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 0 60px rgba(124,58,237,0.4);
+    }
+
+    .share-card::before {
+      content: '';
+      position: absolute;
+      width: 300px; height: 300px;
+      background: radial-gradient(circle, rgba(124,58,237,0.3) 0%, transparent 70%);
+      border-radius: 50%;
+      top: -50px; left: -50px;
+    }
+
+    .share-card::after {
+      content: '';
+      position: absolute;
+      width: 250px; height: 250px;
+      background: radial-gradient(circle, rgba(6,214,160,0.15) 0%, transparent 70%);
+      border-radius: 50%;
+      bottom: -30px; right: -30px;
+    }
+
+    .share-card-label {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.7rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.4);
+      margin-bottom: 20px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .share-card-message {
+      font-family: 'Syne', sans-serif;
+      font-size: clamp(1rem, 3.5vw, 1.4rem);
+      font-weight: 700;
+      color: #fff;
+      text-align: center;
+      line-height: 1.6;
+      position: relative;
+      z-index: 1;
+      word-break: break-word;
+    }
+
+    .share-card-quote {
+      font-size: 4rem;
+      color: rgba(124,58,237,0.4);
+      font-family: Georgia, serif;
+      line-height: 1;
+      position: absolute;
+      top: 50px;
+      left: 24px;
+      z-index: 0;
+    }
+
+    .share-card-brand {
+      position: absolute;
+      bottom: 28px;
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      font-size: 1.2rem;
+      background: linear-gradient(135deg, #7c3aed, #06d6a0);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      z-index: 1;
+      letter-spacing: -0.02em;
+    }
+
+    .modal-actions { display: flex; gap: 12px; width: 100%; }
+
+    .modal-actions button {
+      flex: 1;
+      padding: 12px;
+      border-radius: 10px;
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      font-size: 0.88rem;
+      cursor: pointer;
+      border: none;
+      transition: all 0.2s;
+    }
+
+    .btn-download {
+      background: linear-gradient(135deg, #7c3aed, #9333ea);
+      color: #fff;
+      box-shadow: 0 4px 20px rgba(124,58,237,0.4);
+    }
+
+    .btn-close-modal {
+      background: var(--bg3);
+      color: var(--text);
+      border: 1px solid var(--border) !important;
+    }
+
+    .modal-hint { font-size: 0.75rem; color: var(--muted); text-align: center; }
   </style>
 </head>
 <body>
@@ -79,10 +227,27 @@
       <button class="btn btn-secondary" style="width:auto;padding:11px 24px;" onclick="doChangePassword()">Update Password</button>
     </div>
   </div>
+</div>
 
+<!-- Share Card Modal -->
+<div class="modal-overlay" id="shareModal" onclick="closeModal(event)">
+  <div class="modal-inner">
+    <div class="share-card" id="shareCardEl">
+      <div class="share-card-quote">"</div>
+      <div class="share-card-label">someone said...</div>
+      <div class="share-card-message" id="shareCardText"></div>
+      <div class="share-card-brand">Whispr.</div>
+    </div>
+    <p class="modal-hint">📸 Screenshot or download to share to your story!</p>
+    <div class="modal-actions">
+      <button class="btn-download" onclick="downloadCard()">⬇️ Download</button>
+      <button class="btn-close-modal" onclick="closeShareModal()">Close</button>
+    </div>
+  </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="js/supabase.js"></script>
 <script src="js/auth.js"></script>
 <script src="js/messages.js"></script>
@@ -117,10 +282,52 @@
       }
 
       grid.innerHTML = msgs.map(function(m, i) {
-        return '<div class="message-card" style="animation-delay:' + (i * 0.06) + 's"><p class="message-text">' + escapeHtml(m.message) + '</p><div class="message-meta"><span class="anon-badge">anonymous</span><span class="message-time">' + timeAgo(m.created_at) + '</span></div></div>';
+        return '<div class="message-card" style="animation-delay:' + (i * 0.06) + 's">' +
+          '<p class="message-text">' + escapeHtml(m.message) + '</p>' +
+          '<div class="message-meta">' +
+            '<span class="anon-badge">anonymous</span>' +
+            '<div style="display:flex;align-items:center;gap:8px;">' +
+              '<span class="message-time">' + timeAgo(m.created_at) + '</span>' +
+              '<button class="share-card-btn" onclick="openShareCard(\'' + escapeJs(m.message) + '\')">🖼️ Share</button>' +
+            '</div>' +
+          '</div>' +
+        '</div>';
       }).join('');
     } catch (err) {
       grid.innerHTML = '<div class="alert alert-error show">' + err.message + '</div>';
+    }
+  }
+
+  function openShareCard(message) {
+    document.getElementById('shareCardText').textContent = message;
+    document.getElementById('shareModal').classList.add('show');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeShareModal() {
+    document.getElementById('shareModal').classList.remove('show');
+    document.body.style.overflow = '';
+  }
+
+  function closeModal(e) {
+    if (e.target === document.getElementById('shareModal')) closeShareModal();
+  }
+
+  async function downloadCard() {
+    const card = document.getElementById('shareCardEl');
+    try {
+      const canvas = await html2canvas(card, {
+        scale: 3,
+        backgroundColor: null,
+        useCORS: true,
+        logging: false
+      });
+      const link = document.createElement('a');
+      link.download = 'whispr-message.png';
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    } catch (err) {
+      alert('Could not download. Please screenshot manually!');
     }
   }
 
@@ -138,7 +345,6 @@
       errEl.classList.add('show');
       return;
     }
-
     if (newPassword !== confirmPassword) {
       errEl.textContent = 'Passwords do not match.';
       errEl.classList.add('show');
@@ -146,7 +352,6 @@
     }
 
     const { error } = await db.auth.updateUser({ password: newPassword });
-
     if (error) {
       errEl.textContent = error.message;
       errEl.classList.add('show');
@@ -160,6 +365,10 @@
 
   function escapeHtml(str) {
     return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  function escapeJs(str) {
+    return str.replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/\n/g, '\\n');
   }
 
   function copyLink() {
