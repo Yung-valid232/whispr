@@ -20,7 +20,6 @@
       padding: 28px;
       max-width: 460px;
     }
-
     .share-card-btn {
       display: inline-flex;
       align-items: center;
@@ -36,7 +35,6 @@
       transition: all 0.2s;
     }
     .share-card-btn:hover { border-color: var(--accent); color: var(--text); }
-
     .modal-overlay {
       position: fixed;
       inset: 0;
@@ -49,7 +47,6 @@
       backdrop-filter: blur(8px);
     }
     .modal-overlay.show { display: flex; }
-
     .modal-inner {
       display: flex;
       flex-direction: column;
@@ -58,7 +55,6 @@
       width: 100%;
       max-width: 380px;
     }
-
     .share-card {
       width: 100%;
       aspect-ratio: 9/16;
@@ -74,7 +70,6 @@
       overflow: hidden;
       box-shadow: 0 0 60px rgba(124,58,237,0.4);
     }
-
     .share-card::before {
       content: '';
       position: absolute;
@@ -83,7 +78,6 @@
       border-radius: 50%;
       top: -50px; left: -50px;
     }
-
     .share-card::after {
       content: '';
       position: absolute;
@@ -92,7 +86,6 @@
       border-radius: 50%;
       bottom: -30px; right: -30px;
     }
-
     .share-card-label {
       font-family: 'DM Mono', monospace;
       font-size: 0.7rem;
@@ -103,7 +96,6 @@
       position: relative;
       z-index: 1;
     }
-
     .share-card-message {
       font-family: 'Syne', sans-serif;
       font-size: clamp(1rem, 3.5vw, 1.4rem);
@@ -115,7 +107,6 @@
       z-index: 1;
       word-break: break-word;
     }
-
     .share-card-quote {
       font-size: 4rem;
       color: rgba(124,58,237,0.4);
@@ -126,20 +117,17 @@
       left: 24px;
       z-index: 0;
     }
-
     .share-card-brand {
-  position: absolute;
-  bottom: 28px;
-  font-family: 'Syne', sans-serif;
-  font-weight: 800;
-  font-size: 1.2rem;
-  color: #ffffff;
-  z-index: 1;
-  letter-spacing: -0.02em;
+      position: absolute;
+      bottom: 28px;
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      font-size: 1.2rem;
+      color: #ffffff;
+      z-index: 1;
+      letter-spacing: -0.02em;
     }
-
     .modal-actions { display: flex; gap: 12px; width: 100%; }
-
     .modal-actions button {
       flex: 1;
       padding: 12px;
@@ -151,19 +139,16 @@
       border: none;
       transition: all 0.2s;
     }
-
     .btn-download {
       background: linear-gradient(135deg, #7c3aed, #9333ea);
       color: #fff;
       box-shadow: 0 4px 20px rgba(124,58,237,0.4);
     }
-
     .btn-close-modal {
       background: var(--bg3);
       color: var(--text);
       border: 1px solid var(--border) !important;
     }
-
     .modal-hint { font-size: 0.75rem; color: var(--muted); text-align: center; }
   </style>
 </head>
@@ -226,7 +211,6 @@
   </div>
 </div>
 
-<!-- Share Card Modal -->
 <div class="modal-overlay" id="shareModal" onclick="closeModal(event)">
   <div class="modal-inner">
     <div class="share-card" id="shareCardEl">
@@ -252,18 +236,12 @@
   (async () => {
     const session = await requireAuth();
     if (!session) return;
-
     const profile = await getCurrentProfile(session.user.id);
-    if (!profile) {
-      document.getElementById('greet').textContent = 'Profile not found.';
-      return;
-    }
-
+    if (!profile) { document.getElementById('greet').textContent = 'Profile not found.'; return; }
     document.getElementById('userLabel').textContent = '@' + profile.username;
     document.getElementById('greet').textContent = 'Hey, @' + profile.username + ' 👋';
     document.getElementById('shareUrl').textContent = window.location.origin + '/user?username=' + profile.username;
     document.getElementById('shareBox').style.display = 'flex';
-
     await loadMessages(session.user.id);
   })();
 
@@ -272,12 +250,10 @@
     try {
       const msgs = await getMyMessages(userId);
       document.getElementById('msgCount').textContent = msgs.length;
-
       if (msgs.length === 0) {
         grid.innerHTML = '<div class="empty"><div class="icon">💌</div><p>No messages yet. Share your link to get started!</p></div>';
         return;
       }
-
       grid.innerHTML = msgs.map(function(m, i) {
         return '<div class="message-card" style="animation-delay:' + (i * 0.06) + 's">' +
           '<p class="message-text">' + escapeHtml(m.message) + '</p>' +
@@ -315,7 +291,7 @@
     try {
       const canvas = await html2canvas(card, {
         scale: 3,
-        backgroundColor: null,
+        backgroundColor: '#0a0a0f',
         useCORS: true,
         logging: false
       });
@@ -333,41 +309,16 @@
     const okEl = document.getElementById('cpOkMsg');
     const newPassword = document.getElementById('newPassword').value;
     const confirmPassword = document.getElementById('confirmPassword').value;
-
-    errEl.classList.remove('show');
-    okEl.classList.remove('show');
-
-    if (newPassword.length < 6) {
-      errEl.textContent = 'Password must be at least 6 characters.';
-      errEl.classList.add('show');
-      return;
-    }
-    if (newPassword !== confirmPassword) {
-      errEl.textContent = 'Passwords do not match.';
-      errEl.classList.add('show');
-      return;
-    }
-
+    errEl.classList.remove('show'); okEl.classList.remove('show');
+    if (newPassword.length < 6) { errEl.textContent = 'Password must be at least 6 characters.'; errEl.classList.add('show'); return; }
+    if (newPassword !== confirmPassword) { errEl.textContent = 'Passwords do not match.'; errEl.classList.add('show'); return; }
     const { error } = await db.auth.updateUser({ password: newPassword });
-    if (error) {
-      errEl.textContent = error.message;
-      errEl.classList.add('show');
-    } else {
-      okEl.textContent = '✓ Password updated successfully!';
-      okEl.classList.add('show');
-      document.getElementById('newPassword').value = '';
-      document.getElementById('confirmPassword').value = '';
-    }
+    if (error) { errEl.textContent = error.message; errEl.classList.add('show'); }
+    else { okEl.textContent = '✓ Password updated successfully!'; okEl.classList.add('show'); document.getElementById('newPassword').value = ''; document.getElementById('confirmPassword').value = ''; }
   }
 
-  function escapeHtml(str) {
-    return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-  }
-
-  function escapeJs(str) {
-    return str.replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/\n/g, '\\n');
-  }
-
+  function escapeHtml(str) { return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+  function escapeJs(str) { return str.replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/\n/g,'\\n'); }
   function copyLink() {
     const url = document.getElementById('shareUrl').textContent;
     navigator.clipboard.writeText(url).then(function() {
