@@ -11,8 +11,8 @@
 <nav>
   <div class="nav-inner">
     <a href="/" class="brand">Whispr<span class="brand-dot">.</span></a>
-    <div class="nav-actions">
-      <a href="signup"><button class="btn btn-primary btn-sm">Get your link</button></a>
+    <div class="nav-actions" id="navActions">
+      <a href="/signup"><button class="btn btn-primary btn-sm">Get your link</button></a>
     </div>
   </div>
 </nav>
@@ -25,19 +25,34 @@
     <p>Send an anonymous message. They won't know who you are.</p>
   </div>
 
-  <div id="notFound" style="display:none;" class="empty" >
+  <div id="notFound" style="display:none;" class="empty">
     <div class="icon">🚫</div>
     <p>User not found. Check the link and try again.</p>
   </div>
 
+  <!-- Not logged in -->
+  <div class="card" id="loginPrompt" style="display:none;max-width:100%;margin-top:0;text-align:center;">
+    <div style="font-size:2.5rem;margin-bottom:16px;">🔐</div>
+    <h2 style="font-size:1.3rem;margin-bottom:8px;">Login to send a message</h2>
+    <p style="color:var(--muted);font-size:0.85rem;margin-bottom:24px;">You need a Whispr account to send anonymous messages. Don't worry — the recipient won't know it's you!</p>
+    <div style="display:flex;gap:12px;flex-direction:column;">
+      <a href="/login?redirect=REDIRECT_URL" id="loginLink"><button class="btn btn-primary" style="width:100%;">Log In</button></a>
+      <a href="/signup?redirect=REDIRECT_URL" id="signupLink"><button class="btn btn-secondary" style="width:100%;">Create Account</button></a>
+    </div>
+  </div>
+
+  <!-- Logged in - send form -->
   <div class="card" id="msgForm" style="display:none;max-width:100%;margin-top:0;">
     <div class="alert alert-error" id="errMsg"></div>
     <div class="alert alert-success" id="okMsg"></div>
 
-    <div class="form-group">
-      <label for="senderEmail">Your Gmail</label>
-      <input type="email" id="senderEmail" placeholder="yourname@gmail.com"/>
-      <div style="font-size:0.72rem;color:var(--muted);margin-top:5px;">Used for verification only. Never shown to the recipient.</div>
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid var(--border);">
+      <div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-family:'Syne',sans-serif;font-weight:800;color:#fff;" id="senderAvatar"></div>
+      <div>
+        <div style="font-size:0.72rem;color:var(--muted);">Sending as</div>
+        <div style="font-size:0.82rem;color:var(--text);" id="senderLabel"></div>
+      </div>
+      <span style="margin-left:auto;font-size:0.65rem;background:rgba(6,214,160,0.1);border:1px solid rgba(6,214,160,0.3);color:var(--accent2);padding:3px 10px;border-radius:999px;">anonymous to recipient</span>
     </div>
 
     <div class="form-group">
@@ -50,7 +65,7 @@
   </div>
 
   <p style="text-align:center;font-size:0.78rem;color:var(--muted);margin:24px 0;position:relative;z-index:1;">
-    Want your own link? <a href="signup">Join Whispr free →</a>
+    Want your own link? <a href="/signup">Join Whispr free →</a>
   </p>
 </div>
 
@@ -61,12 +76,12 @@
 <script>
   const params = new URLSearchParams(location.search);
   const username = (params.get('username') || '').trim().toLowerCase();
+  let senderEmail = null;
 
-  if (!username) {
-    window.location.href = 'index.html';
-  }
+  if (!username) window.location.href = '/';
 
   (async () => {
+    // Load recipient profile
     const { data: profile } = await db.from('profiles').select('id,username').eq('username', username).maybeSingle();
 
     if (!profile) {
@@ -74,20 +89,47 @@
       return;
     }
 
-    const initial = profile.username[0].toUpperCase();
-    document.getElementById('avatar').textContent = initial;
+    document.getElementById('avatar').textContent = profile.username[0].toUpperCase();
     document.getElementById('heroName').textContent = '@' + profile.username;
-    document.getElementById('recipientLabel').textContent = `to @${profile.username}`;
+    document.getElementById('recipientLabel').textContent = 'to @' + profile.username;
     document.getElementById('userHero').style.display = 'block';
+    document.title = 'Send a message to @' + profile.username + ' — Whispr';
+
+    // Check if sender is logged in
+    const { data: { session } } = await db.auth.getSession();
+
+    const currentUrl = window.location.href;
+    document.getElementById('loginLink').href = '/login?redirect=' + encodeURIComponent(currentUrl);
+    document.getElementById('signupLink').href = '/signup?redirect=' + encodeURIComponent(currentUrl);
+
+    if (!session) {
+      document.getElementById('loginPrompt').style.display = 'block';
+      return;
+    }
+
+    // Logged in
+    senderEmail = session.user.email;
+    const senderUsername = session.user.user_metadata?.username || senderEmail;
+
+    document.getElementById('senderAvatar').textContent = senderEmail[0].toUpperCase();
+    document.getElementById('senderLabel').textContent = senderUsername;
     document.getElementById('msgForm').style.display = 'block';
-    document.title = `Send a message to @${profile.username} — Whispr`;
+
+    // Update nav
+    document.getElementById('navActions').innerHTML =
+      '<a href="/dashboard"><button class="btn btn-ghost btn-sm">My Dashboard</button></a>';
+
+    // Prevent sending to yourself
+    const { data: myProfile } = await db.from('profiles').select('username').eq('id', session.user.id).maybeSingle();
+    if (myProfile && myProfile.username === username) {
+      document.getElementById('msgForm').innerHTML = '<div class="alert alert-info show" style="display:block;">😅 You cannot send a message to yourself!</div>';
+    }
   })();
 
-  // Char counter
   document.getElementById('msgText').addEventListener('input', function() {
     const len = this.value.length;
     const counter = document.getElementById('charCount');
-    counter.textContent = `${len} / 500`;
+    counter.textContent = len + ' / 500';
     counter.classList.toggle('warn', len > 450);
   });
 
@@ -95,7 +137,6 @@
     const btn = document.getElementById('sendBtn');
     const errEl = document.getElementById('errMsg');
     const okEl = document.getElementById('okMsg');
-    const senderEmail = document.getElementById('senderEmail').value.trim();
     const message = document.getElementById('msgText').value.trim();
 
     errEl.classList.remove('show');
@@ -105,9 +146,8 @@
 
     try {
       await submitMessage(username, senderEmail, message);
-      okEl.textContent = '✓ Message sent! They\'ll never know it was you.';
+      okEl.textContent = "✓ Message sent! They'll never know it was you.";
       okEl.classList.add('show');
-      document.getElementById('senderEmail').value = '';
       document.getElementById('msgText').value = '';
       document.getElementById('charCount').textContent = '0 / 500';
     } catch (err) {
