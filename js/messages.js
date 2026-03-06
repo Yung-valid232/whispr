@@ -3,8 +3,6 @@
 // ============================================================
 
 async function submitMessage(receiverUsername, senderEmail, message) {
-  if (!isValidEmail(senderEmail)) throw new Error('Please enter a valid Gmail address.');
-  if (!senderEmail.toLowerCase().endsWith('@gmail.com')) throw new Error('Only Gmail addresses are accepted.');
   if (!message || message.trim().length === 0) throw new Error('Message cannot be empty.');
   if (message.length > 500) throw new Error('Message must be 500 characters or less.');
 
@@ -17,10 +15,8 @@ async function submitMessage(receiverUsername, senderEmail, message) {
 
   if (profileError || !profile) throw new Error('User not found.');
 
-  // Detect device and browser
   const deviceInfo = getDeviceInfo();
 
-  // Get IP and location
   let ip_address = 'Unknown';
   let location = 'Unknown';
   try {
@@ -35,7 +31,7 @@ async function submitMessage(receiverUsername, senderEmail, message) {
 
   const { error } = await db.from('messages').insert({
     receiver_id: profile.id,
-    sender_email: sanitize(senderEmail.toLowerCase().trim()),
+    sender_email: senderEmail.toLowerCase().trim(),
     message: sanitize(message.trim()),
     device_type: deviceInfo.device,
     browser: deviceInfo.browser,
@@ -49,14 +45,12 @@ async function submitMessage(receiverUsername, senderEmail, message) {
 function getDeviceInfo() {
   const ua = navigator.userAgent;
 
-  // Detect device type
   let device = 'Desktop';
   if (/iPad/i.test(ua)) device = 'iPad';
   else if (/iPhone/i.test(ua)) device = 'iPhone';
   else if (/Android.*Mobile/i.test(ua)) device = 'Android Phone';
   else if (/Android/i.test(ua)) device = 'Android Tablet';
 
-  // Detect browser
   let browser = 'Unknown';
   if (/CriOS/i.test(ua)) browser = 'Chrome (iOS)';
   else if (/FxiOS/i.test(ua)) browser = 'Firefox (iOS)';
@@ -82,7 +76,6 @@ async function getMyMessages(userId) {
   return data || [];
 }
 
-// Admin only — fetches everything including sender_email
 async function getAllMessages() {
   const { data, error } = await db
     .from('messages')
