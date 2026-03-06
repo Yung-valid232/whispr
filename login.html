@@ -24,7 +24,7 @@
       <label for="password">Password</label>
       <input type="password" id="password" placeholder="Your password"/>
       <div style="text-align:right;margin-top:6px;">
-        <a href="forgot-password" style="font-size:0.78rem;color:var(--muted);">Forgot password?</a>
+        <a href="/forgot-password" style="font-size:0.78rem;color:var(--muted);">Forgot password?</a>
       </div>
     </div>
 
@@ -32,7 +32,7 @@
 
     <div class="divider">or</div>
     <p style="text-align:center;font-size:0.85rem;color:var(--muted);">
-      No account? <a href="signup">Sign up free</a>
+      No account? <a href="/signup">Sign up free</a>
     </p>
   </div>
 </div>
@@ -41,6 +41,10 @@
 <script src="js/supabase.js"></script>
 <script src="js/auth.js"></script>
 <script>
+  // Get redirect URL if coming from user page
+  const params = new URLSearchParams(location.search);
+  const redirectTo = params.get('redirect') || '/dashboard';
+
   async function doLogin() {
     const btn = document.getElementById('loginBtn');
     const errEl = document.getElementById('errorMsg');
@@ -53,7 +57,7 @@
 
     try {
       await handleLogin(email, password);
-      window.location.href = 'dashboard.html';
+      window.location.href = redirectTo;
     } catch (err) {
       errEl.textContent = err.message;
       errEl.classList.add('show');
